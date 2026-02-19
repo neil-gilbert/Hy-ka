@@ -1,0 +1,5 @@
+{"id":"ci-001","input":{"prompt":"CI failed: pytest test_user_repo.py::test_save_user with KeyError on 'email'. Classify and suggest first fix."},"expected":{"label":"test_failure","keywords":["test","fixture","email","keyerror"]}}
+{"id":"ci-002","input":{"prompt":"CI failed: mypy reports incompatible return type in service.py line 88. Classify and suggest first fix."},"expected":{"label":"type_failure","keywords":["mypy","type","annotation","return"]}}
+{"id":"ci-003","input":{"prompt":"CI failed: lint (ruff) F401 imported but unused in api/routes.py. Classify and suggest first fix."},"expected":{"label":"lint_failure","keywords":["lint","unused","import","ruff"]}}
+{"id":"ci-004","input":{"prompt":"CI failed: migration check reports model drift for runs.summary_json nullable mismatch. Classify and suggest first fix."},"expected":{"label":"migration_failure","keywords":["migration","schema","drift","nullable"]}}
+{"id":"ci-005","input":{"prompt":"CI failed: integration test timeout waiting for /healthz because server not started. Classify and suggest first fix."},"expected":{"label":"infra_failure","keywords":["timeout","healthz","startup","service"]}}

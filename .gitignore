@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.npm-cache/
+*.tsbuildinfo
+
+# Local env
+.env
+.env.*
+
+# Alembic bytecode
+backend/alembic/__pycache__/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# Build artifacts
+build/
+dist/

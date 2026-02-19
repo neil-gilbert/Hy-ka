@@ -1,0 +1,5 @@
+{"id":"pr-001","input":{"prompt":"Review this diff for possible null dereference in user.profile.name access."},"expected":{"keywords":["null","check","guard","profile"]}}
+{"id":"pr-002","input":{"prompt":"Review this SQL query builder code for injection risk from unescaped input."},"expected":{"keywords":["sql","injection","parameterized","escape"]}}
+{"id":"pr-003","input":{"prompt":"Review this async retry loop for missing backoff and cancellation handling."},"expected":{"keywords":["retry","backoff","cancellation","timeout"]}}
+{"id":"pr-004","input":{"prompt":"Review this auth middleware for missing role checks on admin route."},"expected":{"keywords":["authorization","role","admin","check"]}}
+{"id":"pr-005","input":{"prompt":"Review this cache invalidation logic for stale reads after write."},"expected":{"keywords":["cache","invalidation","stale","write"]}}
