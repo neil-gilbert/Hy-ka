@@ -29,9 +29,12 @@ It provides:
 
 Not a PR bot.
 
-Not an autonomous agent.
+Not a customer-facing autonomous coding agent.
 
 Not a Copilot replacement.
+
+The platform may use an internal evaluator agent to rate outputs consistently,
+but that agent is part of the measurement system, not a user-controlled actor.
 
 ---
 

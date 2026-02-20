@@ -5,6 +5,7 @@ This project is a platform for evaluating AI models on real-world engineering ta
 It allows organisations to:
 
 - Compare models objectively
+- Compare providers objectively (OpenAI, Anthropic, Azure OpenAI, OpenRouter, etc.)
 - Run reproducible experiments ("evals")
 - Measure quality, latency, and cost tradeoffs
 - Understand which model performs best for their engineering workflows
@@ -26,6 +27,10 @@ TaskInstance → a single evaluation unit
 Attempt → model output for a task
 
 Score → evaluation metrics
+
+Evaluator Score → internal agent rating of attempt quality/risk
+
+Provider Governance → org-level allowlists and credentials for provider access
 
 ---
 
