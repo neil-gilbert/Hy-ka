@@ -53,3 +53,6 @@ Phase 4:
 ---
 
 See ROADMAP.md for full plan.
+
+Milestone package:
+- `docs/milestones/m1-pr-shadow-eval/README.md` for the GitHub PR shadow-evaluation buildout

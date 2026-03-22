@@ -14,7 +14,7 @@ from app.api.experiments import router as experiments_router
 from app.api.runs import router as runs_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
-from app.db.session import SessionLocal
+from app.db.session import get_session_local
 
 settings = get_settings()
 configure_logging()
@@ -47,7 +47,9 @@ def startup_check() -> None:
         logger.warning("OPENAI_API_KEY is not configured")
     if not settings.anthropic_api_key:
         logger.warning("ANTHROPIC_API_KEY is not configured")
-    with SessionLocal() as session:
+    if not settings.github_token:
+        logger.warning("GITHUB_TOKEN is not configured")
+    with get_session_local()() as session:
         session.execute(text("SELECT 1"))
 
 

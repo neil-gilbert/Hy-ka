@@ -34,6 +34,48 @@ def _token_overlap(output: str, expected_terms: list[str]) -> float:
 
 
 def score_attempt(task: TaskInstance, attempt: Attempt) -> list[Score]:
+    if task.workload_type.value == "github_pr_shadow":
+        expected_payload = task.expected_payload if isinstance(task.expected_payload, dict) else {}
+        expected_files = {str(item) for item in expected_payload.get("reference_files", [])}
+        raw_response = attempt.raw_response if isinstance(attempt.raw_response, dict) else {}
+        edited_files = {str(item) for item in raw_response.get("edited_files", [])}
+        validation = raw_response.get("validation", [])
+        validation_score = (
+            sum(1 for row in validation if int(row.get("exit_code", 1)) == 0) / len(validation)
+            if validation
+            else (0.0 if attempt.error_message else 1.0)
+        )
+        file_overlap = (
+            len(expected_files.intersection(edited_files)) / len(expected_files)
+            if expected_files
+            else 0.0
+        )
+        quality = max(0.0, min(1.0, (validation_score * 0.7) + (file_overlap * 0.3)))
+        pass_value = 1.0 if validation_score == 1.0 and attempt.error_message is None else 0.0
+        return [
+            Score(
+                run_id=attempt.run_id,
+                task_instance_id=attempt.task_instance_id,
+                model_arm_id=attempt.model_arm_id,
+                metric_name="quality",
+                value=quality,
+                details={
+                    "validation_score": validation_score,
+                    "file_overlap": file_overlap,
+                    "expected_files": sorted(expected_files),
+                    "edited_files": sorted(edited_files),
+                },
+            ),
+            Score(
+                run_id=attempt.run_id,
+                task_instance_id=attempt.task_instance_id,
+                model_arm_id=attempt.model_arm_id,
+                metric_name="pass",
+                value=pass_value,
+                details={"validation_score": validation_score},
+            ),
+        ]
+
     output_text = attempt.raw_output or ""
     expected_payload = task.expected_payload
 

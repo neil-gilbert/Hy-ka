@@ -13,12 +13,37 @@ import {
 } from './lib/api'
 import type { Attempt, Experiment, ModelArm, Run, RunSummary, WorkloadType } from './lib/types'
 
+// New Dashboard Imports
+import { Router } from './components/SimpleRouter'
+import Dashboard1 from './pages/Dashboard1'
+import Dashboard2 from './pages/Dashboard2'
+import Dashboard3 from './pages/Dashboard3'
+import Dashboard4 from './pages/Dashboard4'
+import Dashboard5 from './pages/Dashboard5'
+import InsightsDashboard from './pages/InsightsDashboard'
+import UiKit from './pages/UiKit'
+import Home1 from './pages/Home1'
+import Home5 from './pages/Home5'
+import HomeVariation1 from './pages/HomeVariation1'
+import HomeVariation2 from './pages/HomeVariation2'
+import HomeVariation3 from './pages/HomeVariation3'
+import HomeVariation4 from './pages/HomeVariation4'
+import HomeVariation5 from './pages/HomeVariation5'
+
 interface CreateFormState {
   name: string
   workload_type: WorkloadType
   dataset_ref: string
+  repo_ref: string
   budget_usd: string
   max_tasks: number
+  sample_percent: number
+  lookback_limit: number
+  runner_backend: 'local' | 'podman'
+  runtime_profile: 'python' | 'node' | 'dotnet' | 'java' | 'polyglot'
+  container_image: string
+  setup_commands: string
+  validation_commands: string
   seed: number
   model_arms: ModelArm[]
 }
@@ -27,8 +52,16 @@ const defaultForm: CreateFormState = {
   name: 'Phase1 Evaluation',
   workload_type: 'pr_review',
   dataset_ref: 'pr_review/v1.jsonl',
+  repo_ref: '',
   budget_usd: '25.00',
   max_tasks: 3,
+  sample_percent: 10,
+  lookback_limit: 20,
+  runner_backend: 'podman',
+  runtime_profile: 'python',
+  container_image: '',
+  setup_commands: '',
+  validation_commands: '',
   seed: 42,
   model_arms: [
     {
@@ -46,7 +79,7 @@ const defaultForm: CreateFormState = {
   ],
 }
 
-export default function App() {
+function LegacyDashboard() {
   const [experiments, setExperiments] = useState<Experiment[]>([])
   const [selectedExperimentId, setSelectedExperimentId] = useState<string | null>(null)
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
@@ -85,6 +118,14 @@ export default function App() {
   }, [selectedExperimentId])
 
   const topModel = useMemo(() => summary?.models?.[0], [summary])
+  const leaderboardGroups = summary?.leaderboards
+    ? [
+        ['Correctness', summary.leaderboards.correctness],
+        ['Evaluator', summary.leaderboards.evaluator_score],
+        ['Speed', summary.leaderboards.speed],
+        ['Cost', summary.leaderboards.cost],
+      ] as const
+    : []
 
   async function onCreateExperiment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -92,12 +133,32 @@ export default function App() {
     setError(null)
 
     try {
+      const isGithubShadow = form.workload_type === 'github_pr_shadow'
       const payload = {
         name: form.name,
         workload_type: form.workload_type,
-        dataset_ref: form.dataset_ref,
+        dataset_ref: isGithubShadow ? `github://${form.repo_ref.trim()}` : form.dataset_ref,
         budget_usd: form.budget_usd,
-        sampling: { max_tasks: form.max_tasks },
+        sampling: {
+          max_tasks: form.max_tasks,
+          ...(isGithubShadow
+            ? {
+                sample_percent: form.sample_percent,
+                lookback_limit: form.lookback_limit,
+                runner_backend: form.runner_backend,
+                runtime_profile: form.runtime_profile,
+                ...(form.container_image.trim() ? { container_image: form.container_image.trim() } : {}),
+                setup_commands: form.setup_commands
+                  .split('\n')
+                  .map((row) => row.trim())
+                  .filter(Boolean),
+                validation_commands: form.validation_commands
+                  .split('\n')
+                  .map((row) => row.trim())
+                  .filter(Boolean),
+              }
+            : {}),
+        },
         seed: form.seed,
         model_arms: form.model_arms,
       }
@@ -182,22 +243,126 @@ export default function App() {
                   setForm((prev) => ({
                     ...prev,
                     workload_type: workload,
-                    dataset_ref: workload === 'pr_review' ? 'pr_review/v1.jsonl' : 'ci_triage/v1.jsonl',
+                    dataset_ref:
+                      workload === 'pr_review'
+                        ? 'pr_review/v1.jsonl'
+                        : workload === 'ci_triage'
+                          ? 'ci_triage/v1.jsonl'
+                          : prev.dataset_ref,
                   }))
                 }}
               >
                 <option value="pr_review">pr_review</option>
                 <option value="ci_triage">ci_triage</option>
+                <option value="github_pr_shadow">github_pr_shadow</option>
               </select>
             </label>
 
-            <label>
-              Dataset
-              <input
-                value={form.dataset_ref}
-                onChange={(event) => setForm((prev) => ({ ...prev, dataset_ref: event.target.value }))}
-              />
-            </label>
+            {form.workload_type === 'github_pr_shadow' ? (
+              <>
+                <label>
+                  GitHub Repo
+                  <input
+                    placeholder="owner/repo"
+                    value={form.repo_ref}
+                    onChange={(event) => setForm((prev) => ({ ...prev, repo_ref: event.target.value }))}
+                  />
+                </label>
+
+                <label>
+                  Sample Percent
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={form.sample_percent}
+                    onChange={(event) => setForm((prev) => ({ ...prev, sample_percent: Number(event.target.value) }))}
+                  />
+                </label>
+
+                <label>
+                  Lookback PRs
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.lookback_limit}
+                    onChange={(event) => setForm((prev) => ({ ...prev, lookback_limit: Number(event.target.value) }))}
+                  />
+                </label>
+
+                <label>
+                  Runner Backend
+                  <select
+                    value={form.runner_backend}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        runner_backend: event.target.value as CreateFormState['runner_backend'],
+                      }))
+                    }
+                  >
+                    <option value="podman">podman</option>
+                    <option value="local">local</option>
+                  </select>
+                </label>
+
+                <label>
+                  Runtime Profile
+                  <select
+                    value={form.runtime_profile}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        runtime_profile: event.target.value as CreateFormState['runtime_profile'],
+                      }))
+                    }
+                  >
+                    <option value="python">python</option>
+                    <option value="node">node</option>
+                    <option value="dotnet">dotnet</option>
+                    <option value="java">java</option>
+                    <option value="polyglot">polyglot</option>
+                  </select>
+                </label>
+
+                <label>
+                  Container Image
+                  <input
+                    placeholder="optional override, e.g. python:3.11-slim"
+                    value={form.container_image}
+                    onChange={(event) => setForm((prev) => ({ ...prev, container_image: event.target.value }))}
+                  />
+                </label>
+
+                <label className="full-span">
+                  Setup Commands
+                  <textarea
+                    rows={4}
+                    placeholder={'pip install -r requirements.txt\nnpm ci'}
+                    value={form.setup_commands}
+                    onChange={(event) => setForm((prev) => ({ ...prev, setup_commands: event.target.value }))}
+                  />
+                </label>
+
+                <label className="full-span">
+                  Validation Commands
+                  <textarea
+                    rows={4}
+                    placeholder={'python -m pytest tests/unit\nnpm test'}
+                    value={form.validation_commands}
+                    onChange={(event) => setForm((prev) => ({ ...prev, validation_commands: event.target.value }))}
+                  />
+                </label>
+              </>
+            ) : (
+              <label>
+                Dataset
+                <input
+                  value={form.dataset_ref}
+                  onChange={(event) => setForm((prev) => ({ ...prev, dataset_ref: event.target.value }))}
+                />
+              </label>
+            )}
 
             <label>
               Budget (USD)
@@ -234,6 +399,8 @@ export default function App() {
                   <select value={arm.provider} onChange={(event) => updateArm(index, 'provider', event.target.value)}>
                     <option value="openai">openai</option>
                     <option value="anthropic">anthropic</option>
+                    <option value="azure_openai">azure_openai</option>
+                    <option value="openrouter">openrouter</option>
                     <option value="mock">mock</option>
                   </select>
                 </label>
@@ -278,6 +445,17 @@ export default function App() {
               <p>Dataset: {selectedExperiment.dataset_ref}</p>
               <p>Budget: ${selectedExperiment.budget_usd}</p>
               <p>Seed: {selectedExperiment.seed}</p>
+              {selectedExperiment.workload_type === 'github_pr_shadow' && (
+                <>
+                  <p>Sample: {selectedExperiment.sampling.sample_percent ?? 100}%</p>
+                  <p>Lookback: {selectedExperiment.sampling.lookback_limit ?? 20} merged PRs</p>
+                  <p>Runner: {selectedExperiment.sampling.runner_backend ?? 'local'}</p>
+                  <p>Profile: {selectedExperiment.sampling.runtime_profile ?? 'auto'}</p>
+                  {selectedExperiment.sampling.container_image && (
+                    <p>Image: {selectedExperiment.sampling.container_image}</p>
+                  )}
+                </>
+              )}
 
               <div className="arms-mini">
                 {selectedExperiment.model_arms.map((arm) => (
@@ -333,9 +511,12 @@ export default function App() {
                     <tr>
                       <th>Model</th>
                       <th>Quality</th>
+                      <th>Correctness</th>
+                      <th>Evaluator</th>
                       <th>Pass Rate</th>
                       <th>P50 / P95</th>
                       <th>Total Cost</th>
+                      <th>Risk</th>
                       <th>Errors</th>
                     </tr>
                   </thead>
@@ -344,17 +525,60 @@ export default function App() {
                       <tr key={row.model_arm_id}>
                         <td>{row.display_name}</td>
                         <td>{row.quality_avg.toFixed(3)}</td>
+                        <td>{row.correctness_avg.toFixed(3)}</td>
+                        <td>{row.evaluator_score_avg.toFixed(3)}</td>
                         <td>{(row.pass_rate * 100).toFixed(1)}%</td>
                         <td>
                           {row.latency_p50_ms.toFixed(0)} / {row.latency_p95_ms.toFixed(0)} ms
                         </td>
                         <td>${row.total_cost_usd.toFixed(6)}</td>
+                        <td>{row.risk_avg.toFixed(3)}</td>
                         <td>{row.error_count}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
+              {leaderboardGroups.length > 0 && (
+                <div className="card table-card">
+                  <h3>Leaderboards</h3>
+                  <div className="attempt-feed">
+                    {leaderboardGroups.map(([label, rows]) => (
+                      <article key={label}>
+                        <header>
+                          <strong>{label}</strong>
+                          <span>{rows[0]?.display_name ?? 'n/a'}</span>
+                        </header>
+                        <p>
+                          {rows
+                            .map((row) => `${row.display_name} (${row.value.toFixed(3)})`)
+                            .join(' · ')}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {summary?.tasks && summary.tasks.length > 0 && (
+                <div className="card">
+                  <h3>Sampled Pull Requests</h3>
+                  <div className="attempt-feed">
+                    {summary.tasks.map((task) => (
+                      <article key={task.task_instance_id}>
+                        <header>
+                          <strong>
+                            {task.repo_ref ? `${task.repo_ref}#${task.pr_number}` : task.dataset_item_id}
+                          </strong>
+                          <span>{task.title ?? 'Untitled task'}</span>
+                        </header>
+                        <p>{task.html_url ?? 'No URL captured'}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="card">
                 <h3>Attempts ({attempts.length})</h3>
@@ -381,5 +605,29 @@ export default function App() {
 
       {error && <aside className="error-banner">{error}</aside>}
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Router 
+      routes={{
+        '/': <LegacyDashboard />,
+        '/1': <Dashboard1 />,
+        '/2': <Dashboard2 />,
+        '/3': <Dashboard3 />,
+        '/4': <Dashboard4 />,
+        '/5': <Dashboard5 />,
+        '/6': <UiKit />,
+        '/7': <InsightsDashboard />,
+        '/home1': <Home1 />,
+        '/home5': <Home5 />,
+        '/home-v1': <HomeVariation1 />,
+        '/home-v2': <HomeVariation2 />,
+        '/home-v3': <HomeVariation3 />,
+        '/home-v4': <HomeVariation4 />,
+        '/home-v5': <HomeVariation5 />,
+      }} 
+    />
   )
 }

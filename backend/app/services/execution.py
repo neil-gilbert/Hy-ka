@@ -11,7 +11,9 @@ from app.models.entities import Attempt, Experiment, ModelArm, Run, RunStatus
 from app.providers.factory import get_provider
 from app.services.aggregator import aggregate_run
 from app.services.dataset_loader import load_dataset
+from app.services.evaluator import evaluate_attempt
 from app.services.planner import plan_task_instances
+from app.services.shadow_eval import run_shadow_attempt
 from app.services.scorer import score_attempt
 
 logger = logging.getLogger("modeleval.execution")
@@ -38,7 +40,7 @@ def execute_run(db: Session, run: Run, experiment: Experiment, model_arms: list[
     logger.info("run_started", extra={"correlation_id": run.correlation_id})
 
     try:
-        dataset = load_dataset(experiment.dataset_ref)
+        dataset = load_dataset(experiment.dataset_ref, experiment.sampling)
         experiment.dataset_hash = dataset.dataset_hash
         db.add(experiment)
         db.commit()
@@ -49,11 +51,14 @@ def execute_run(db: Session, run: Run, experiment: Experiment, model_arms: list[
         db.commit()
 
         for task in tasks:
-            task_input = _task_prompt(task.input_payload)
             for arm in model_arms:
-                provider = get_provider(arm.provider)
-                config = {**arm.config, "model_name": arm.model_name}
-                result = provider.generate(task_input=task_input, model_config=config)
+                if experiment.workload_type.value == "github_pr_shadow":
+                    result = run_shadow_attempt(task, arm)
+                else:
+                    task_input = _task_prompt(task.input_payload)
+                    provider = get_provider(arm.provider)
+                    config = {**arm.config, "model_name": arm.model_name}
+                    result = provider.generate(task_input=task_input, model_config=config)
 
                 attempt = Attempt(
                     run_id=run.id,
@@ -73,6 +78,8 @@ def execute_run(db: Session, run: Run, experiment: Experiment, model_arms: list[
 
                 scores = score_attempt(task, attempt)
                 for score in scores:
+                    db.add(score)
+                for score in evaluate_attempt(task, attempt):
                     db.add(score)
 
             db.commit()

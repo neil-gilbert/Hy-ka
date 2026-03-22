@@ -3,7 +3,7 @@
 Backend stack:
 
 - FastAPI
-- Postgres
+- MySQL
 - Worker process
 
 ## Phase 1: Core Baseline (done)

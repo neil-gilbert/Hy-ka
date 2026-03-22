@@ -1,17 +1,18 @@
 version: "3.9"
 
 services:
-  postgres:
-    image: postgres:16
-    container_name: modeleval-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: modeleval-mysql
     environment:
-      POSTGRES_DB: modeleval
-      POSTGRES_USER: modeleval
-      POSTGRES_PASSWORD: modeleval
+      MYSQL_DATABASE: modeleval
+      MYSQL_USER: modeleval
+      MYSQL_PASSWORD: modeleval
+      MYSQL_ROOT_PASSWORD: root
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  postgres_data:
+  mysql_data:

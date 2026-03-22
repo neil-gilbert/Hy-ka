@@ -62,10 +62,10 @@ body {
   color: var(--accent-2);
 }
 
-h1,
-h2,
-h3,
-h4 {
+h1:not(.insights-dashboard *),
+h2:not(.insights-dashboard *),
+h3:not(.insights-dashboard *),
+h4:not(.insights-dashboard *) {
   margin: 0;
   font-family: 'Alfa Slab One', serif;
   letter-spacing: 0.02em;
@@ -128,6 +128,7 @@ label {
 }
 
 input,
+textarea,
 select,
 button {
   width: 100%;
@@ -140,10 +141,21 @@ button {
 }
 
 input:focus,
+textarea:focus,
 select:focus,
 button:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 92px;
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+.full-span {
+  grid-column: 1 / -1;
 }
 
 button {

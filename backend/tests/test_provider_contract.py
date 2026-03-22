@@ -14,3 +14,13 @@ def test_mock_provider_contract():
     assert result.usage.total_tokens == result.usage.prompt_tokens + result.usage.completion_tokens
     assert result.latency_ms >= 1
     assert result.cost_usd >= 0
+
+
+def test_mock_provider_can_return_configured_response():
+    provider = MockProvider()
+    result = provider.generate(
+        task_input="ignored",
+        model_config={"mock_response": '{"summary":"ok","edits":[]}'},
+    )
+    assert result.error is None
+    assert result.raw_output == '{"summary":"ok","edits":[]}'

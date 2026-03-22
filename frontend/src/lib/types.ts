@@ -1,5 +1,5 @@
-export type ProviderType = 'openai' | 'anthropic' | 'mock'
-export type WorkloadType = 'pr_review' | 'ci_triage'
+export type ProviderType = 'openai' | 'anthropic' | 'azure_openai' | 'openrouter' | 'mock'
+export type WorkloadType = 'pr_review' | 'ci_triage' | 'github_pr_shadow'
 
 export interface ModelArm {
   id?: string
@@ -16,7 +16,16 @@ export interface Experiment {
   workload_type: WorkloadType
   dataset_ref: string
   dataset_hash: string | null
-  sampling: { max_tasks: number }
+  sampling: {
+    max_tasks: number
+    sample_percent?: number
+    lookback_limit?: number
+    validation_commands?: string[]
+    setup_commands?: string[]
+    runner_backend?: 'local' | 'podman'
+    runtime_profile?: 'python' | 'node' | 'dotnet' | 'java' | 'polyglot'
+    container_image?: string
+  }
   budget_usd: string
   seed: number
   model_arms: ModelArm[]
@@ -61,6 +70,9 @@ export interface SummaryModel {
   model_name: string
   quality_avg: number
   pass_rate: number
+  correctness_avg: number
+  evaluator_score_avg: number
+  risk_avg: number
   attempt_count: number
   error_count: number
   latency_p50_ms: number
@@ -68,9 +80,33 @@ export interface SummaryModel {
   total_cost_usd: number
 }
 
+export interface LeaderboardRow {
+  model_arm_id: string
+  display_name: string
+  provider: string
+  model_name: string
+  value: number
+}
+
+export interface RunTaskSummary {
+  task_instance_id: string
+  dataset_item_id: string
+  repo_ref: string | null
+  pr_number: number | null
+  title: string | null
+  html_url: string | null
+}
+
 export interface RunSummary {
   run_id: string
   models: SummaryModel[]
+  tasks?: RunTaskSummary[]
+  leaderboards?: {
+    correctness: LeaderboardRow[]
+    evaluator_score: LeaderboardRow[]
+    speed: LeaderboardRow[]
+    cost: LeaderboardRow[]
+  }
   failure_ratio: number
   failure_threshold: number
   total_attempts: number

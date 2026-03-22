@@ -41,6 +41,34 @@ class ExperimentCreate(BaseModel):
         max_tasks = value.get("max_tasks", 1)
         if not isinstance(max_tasks, int) or max_tasks <= 0:
             raise ValueError("sampling.max_tasks must be a positive integer")
+        if "sample_percent" in value:
+            sample_percent = value["sample_percent"]
+            if not isinstance(sample_percent, (int, float)) or sample_percent <= 0 or sample_percent > 100:
+                raise ValueError("sampling.sample_percent must be between 0 and 100")
+        if "lookback_limit" in value:
+            lookback_limit = value["lookback_limit"]
+            if not isinstance(lookback_limit, int) or lookback_limit <= 0:
+                raise ValueError("sampling.lookback_limit must be a positive integer")
+        if "validation_commands" in value:
+            commands = value["validation_commands"]
+            if not isinstance(commands, list) or not all(isinstance(item, str) and item.strip() for item in commands):
+                raise ValueError("sampling.validation_commands must be a list of non-empty strings")
+        if "setup_commands" in value:
+            commands = value["setup_commands"]
+            if not isinstance(commands, list) or not all(isinstance(item, str) and item.strip() for item in commands):
+                raise ValueError("sampling.setup_commands must be a list of non-empty strings")
+        if "runner_backend" in value:
+            runner_backend = str(value["runner_backend"])
+            if runner_backend not in {"local", "podman"}:
+                raise ValueError("sampling.runner_backend must be one of: local, podman")
+        if "runtime_profile" in value:
+            runtime_profile = str(value["runtime_profile"])
+            if runtime_profile not in {"python", "node", "dotnet", "java", "polyglot"}:
+                raise ValueError("sampling.runtime_profile must be one of: python, node, dotnet, java, polyglot")
+        if "container_image" in value:
+            container_image = value["container_image"]
+            if not isinstance(container_image, str) or not container_image.strip():
+                raise ValueError("sampling.container_image must be a non-empty string")
         return value
 
 

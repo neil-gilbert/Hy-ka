@@ -1,7 +1,7 @@
 # ModelEval
 
 ModelEval is a Phase-1 engineering model evaluation platform with:
-- FastAPI backend + Postgres
+- FastAPI backend + MySQL
 - Synchronous evaluation pipeline (planner -> executor -> scorer -> aggregator)
 - Multi-provider adapters (OpenAI, Anthropic, Mock)
 - CLI for experiment/run operations
@@ -13,12 +13,12 @@ ModelEval is a Phase-1 engineering model evaluation platform with:
 - `/frontend` React dashboard
 - `/cli` Thin HTTP client examples
 - `/datasets` Static JSONL benchmark workloads
-- `/infra` Local infrastructure (Postgres)
+- `/infra` Local infrastructure (MySQL)
 - `/docs` Product and architecture docs
 
 ## Quickstart
 
-1. Start Postgres (Podman)
+1. Start MySQL (Podman)
 
 ```bash
 cd infra

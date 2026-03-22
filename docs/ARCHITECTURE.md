@@ -7,7 +7,7 @@ System consists of 6 layers:
 3. Run Orchestrator (planner + executor)
 4. Provider Gateway (OpenAI, Anthropic, Azure OpenAI, OpenRouter, Mock)
 5. Evaluation Engine (rule scorer + evaluator agent)
-6. Storage and Analytics (Postgres + run summaries)
+6. Storage and Analytics (MySQL + run summaries)
 
 ## Core Runtime Flow
 
